@@ -27,7 +27,20 @@ import {
   Type,
   Maximize2,
   Minimize2,
-  ArrowUp
+  ArrowUp,
+  Wifi,
+  Phone,
+  Shield,
+  Download,
+  IdCard,
+  RotateCw,
+  Building2,
+  RefreshCw,
+  Share2,
+  BadgeCheck,
+  Smartphone,
+  AlertTriangle,
+  Layers
 } from 'lucide-react';
 
 interface EventItem {
@@ -74,6 +87,19 @@ interface CertificateRecord {
   verified: boolean;
   issuer: string;
 }
+
+interface TeamParticipation {
+  id: string;
+  name: string;
+  project: string;
+  role: string;
+}
+
+const INITIAL_TEAM_PARTICIPATIONS: TeamParticipation[] = [
+  { id: 'tp-1', name: 'Fatima Zahra', project: 'AI Robotics Sprint', role: 'Team Lead' },
+  { id: 'tp-2', name: 'Ahmad Khan', project: 'Smart Agriculture Tool', role: 'Developer' }
+];
+
 
 const INITIAL_EVENTS: EventItem[] = [
   {
@@ -348,6 +374,8 @@ const INITIAL_CERTIFICATES: CertificateRecord[] = [
   }
 ];
 
+
+
 export default function App() {
   // Font Selector State - Playfair Display, Inter, Roboto
   const [headingFont, setHeadingFont] = useState<'playfair' | 'inter' | 'roboto'>('playfair');
@@ -379,7 +407,9 @@ export default function App() {
     'role-3': true
   });
 
-  const [selectedTeamMemberId, setSelectedTeamMemberId] = useState<string>('tm-1');
+  const selectedTeamMemberIdState = useState<string>('tm-1');
+  const selectedTeamMemberId = selectedTeamMemberIdState[0];
+  const setSelectedTeamMemberId = selectedTeamMemberIdState[1];
 
   const toggleRole = (id: string) => {
     setExpandedRoles(prev => ({ ...prev, [id]: !prev[id] }));
@@ -527,6 +557,9 @@ export default function App() {
     eventName: 'First Mega Event of Collabs',
     issueDate: '18 October 2026'
   });
+  const [teamParticipations, setTeamParticipations] = useState<TeamParticipation[]>(INITIAL_TEAM_PARTICIPATIONS);
+  const [isAdminMode, setIsAdminMode] = useState(false);
+  const [newParticipant, setNewParticipant] = useState({ name: '', project: '', role: '' });
   const [currentCertId, setCurrentCertId] = useState('CLB-2026-892');
   const [generatorSuccess, setGeneratorSuccess] = useState(false);
   const [qrCodeDataUrls, setQrCodeDataUrls] = useState<Record<string, string>>({});
@@ -548,6 +581,7 @@ export default function App() {
     notes: ''
   });
   const [regSuccessBadge, setRegSuccessBadge] = useState<string | null>(null);
+
 
   // Generate verification URL for a given Certificate ID
   const getVerificationUrl = (certId: string) => {
@@ -649,6 +683,17 @@ export default function App() {
     }, 4000);
   };
 
+  const handleAddParticipant = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newParticipant.name || !newParticipant.project || !newParticipant.role) return;
+    setTeamParticipations([...teamParticipations, {
+      id: `tp-${Date.now()}`,
+      ...newParticipant
+    }]);
+    setNewParticipant({ name: '', project: '', role: '' });
+  };
+
+
   const handleGenerateCertificate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!certForm.recipientName) return;
@@ -679,8 +724,15 @@ export default function App() {
   };
 
   const handlePrintCertificate = () => {
+    document.body.classList.add('print-cert');
+    document.body.classList.remove('print-badge');
     window.print();
+    setTimeout(() => {
+      document.body.classList.remove('print-cert');
+    }, 1000);
   };
+
+
 
   const handleCopyVerificationLink = (certId: string) => {
     const url = getVerificationUrl(certId);
@@ -747,6 +799,14 @@ export default function App() {
               Events
             </a>
             <a
+              href="#attendee-pass"
+              onClick={(e) => handleSmoothNavClick(e, 'attendee-pass', 'badgeGenerator')}
+              className="hover:text-blue-600 transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              <span>Pass & Badge</span>
+              <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-black uppercase tracking-wider">Pass</span>
+            </a>
+            <a
               href="#team"
               onClick={(e) => handleSmoothNavClick(e, 'team', 'teamDirectory')}
               className="hover:text-blue-600 transition-colors cursor-pointer"
@@ -804,6 +864,13 @@ export default function App() {
             className="px-2.5 py-1 rounded-md hover:bg-slate-100 hover:text-blue-600 shrink-0 transition-colors cursor-pointer"
           >
             Events
+          </a>
+          <a
+            href="#attendee-pass"
+            onClick={(e) => handleSmoothNavClick(e, 'attendee-pass', 'badgeGenerator')}
+            className="px-2.5 py-1 rounded-md hover:bg-slate-100 text-blue-600 font-bold shrink-0 transition-colors cursor-pointer"
+          >
+            Pass & Badge
           </a>
           <a
             href="#team"
@@ -871,7 +938,7 @@ export default function App() {
               </div>
             </div>
 
-            <div className="pt-2 flex flex-wrap items-center gap-4">
+            <div className="pt-2 flex flex-wrap items-center gap-3">
               <button
                 onClick={() => handleOpenRegistration(INITIAL_EVENTS[0])}
                 className="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-lg shadow-md shadow-blue-600/20 transition-all flex items-center gap-2 cursor-pointer hover:scale-[1.02]"
@@ -882,9 +949,17 @@ export default function App() {
               <a
                 href="#events"
                 onClick={(e) => handleSmoothNavClick(e, 'events', 'eventsHub')}
-                className="px-6 py-3.5 bg-white hover:bg-slate-100 text-slate-800 font-semibold text-sm rounded-lg border border-slate-300 transition-colors flex items-center gap-2 cursor-pointer"
+                className="px-5 py-3.5 bg-white hover:bg-slate-100 text-slate-800 font-semibold text-sm rounded-lg border border-slate-300 transition-colors flex items-center gap-2 cursor-pointer"
               >
-                <span>View Event Details</span>
+                <span>Event Details</span>
+              </a>
+              <a
+                href="#attendee-pass"
+                onClick={(e) => handleSmoothNavClick(e, 'attendee-pass', 'badgeGenerator')}
+                className="px-4 py-3.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-sm rounded-lg border border-blue-200 transition-colors flex items-center gap-2 cursor-pointer"
+              >
+                <IdCard size={16} className="text-blue-600" />
+                <span>Get Digital Pass</span>
               </a>
             </div>
           </div>
@@ -1121,7 +1196,8 @@ export default function App() {
         </div>
       </section>
 
-      {/* 4. Team Members & Responsibilities Directory with Expand/Collapse */}
+
+      {/* 5. Team Members & Responsibilities Directory with Expand/Collapse */}
       <section id="team" className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto scroll-mt-24">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 text-left">
           <div>
@@ -1328,6 +1404,38 @@ export default function App() {
             })()}
           </div>
         )}
+      </section>
+
+      {/* 5. Team Participation Section */}
+      <section id="team-participation" className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-200">
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="font-heading text-3xl font-black text-slate-900 tracking-tight">Team Participation</h2>
+          <button onClick={() => setIsAdminMode(!isAdminMode)} className="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-bold">
+            {isAdminMode ? 'Exit Admin Mode' : 'Admin Mode'}
+          </button>
+        </div>
+
+        {isAdminMode && (
+          <form onSubmit={handleAddParticipant} className="bg-white p-6 rounded-xl border border-slate-200 mb-8 space-y-4">
+            <h3 className="text-lg font-bold">Add Participant</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <input placeholder="Name" value={newParticipant.name} onChange={e => setNewParticipant({...newParticipant, name: e.target.value})} className="border p-2 rounded" />
+              <input placeholder="Project" value={newParticipant.project} onChange={e => setNewParticipant({...newParticipant, project: e.target.value})} className="border p-2 rounded" />
+              <input placeholder="Role" value={newParticipant.role} onChange={e => setNewParticipant({...newParticipant, role: e.target.value})} className="border p-2 rounded" />
+            </div>
+            <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">Add</button>
+          </form>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {teamParticipations.map(p => (
+            <div key={p.id} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <h3 className="font-bold text-lg">{p.name}</h3>
+              <p className="text-slate-600">Project: {p.project}</p>
+              <p className="text-slate-600">Role: {p.role}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* 5. Volunteer Portal & Secure Login */}
@@ -1877,7 +1985,7 @@ export default function App() {
                 </button>
               </div>
               <p className="text-sm text-slate-600 mt-1 max-w-2xl">
-                Recognizing grassroots builders and student pioneers across Chitral.
+                Official prizes, honors, and credentials breakdown for participants at the First Mega Event of Collabs in Booni, Upper Chitral.
               </p>
             </div>
           </div>
@@ -1887,38 +1995,51 @@ export default function App() {
               {[
                 {
                   id: 'aw-1',
-                  award: '1st Place · Innovation Grand Prize',
-                  recipient: 'Synergy Labs Booni',
-                  initiative: 'Offline Student Knowledge Base',
-                  citation: 'Engineered an offline-first learning system enabling mountain student groups to access collaborative course materials without steady broadband.',
-                  tier: 'Grand Champion'
+                  award: 'Cash Prize with Certificate',
+                  recipient: '1st Position',
+                  initiative: 'Grand Prize Winner',
+                  citation: 'The 1st position winner is awarded a grand Cash Prize along with an authenticated Certificate of Excellence for highest achievement in the mega exhibition.',
+                  tier: '1st Position · Gold',
+                  badgeColor: 'text-amber-800 bg-amber-50 border-amber-200',
+                  iconBg: 'bg-amber-100 text-amber-700',
+                  icon: Trophy
                 },
                 {
                   id: 'aw-2',
-                  award: 'Community Mentor of the Year',
-                  recipient: 'Prof. David Thorne',
-                  initiative: 'Chitral Youth Career Mentorship',
-                  citation: 'Guided 60+ local secondary school graduates toward technology internships and remote work pathways.',
-                  tier: 'Distinguished Fellow'
+                  award: 'Commemorative Shield',
+                  recipient: '2nd Position',
+                  initiative: 'Runner-Up Honor',
+                  citation: 'The 2nd position runner-up is presented with the official Collabs Commemorative Shield and Certificate honoring outstanding innovation and design.',
+                  tier: '2nd Position · Silver',
+                  badgeColor: 'text-slate-800 bg-slate-100 border-slate-300',
+                  iconBg: 'bg-slate-200 text-slate-800',
+                  icon: Shield
                 },
                 {
                   id: 'aw-3',
-                  award: 'Volunteer Catalyst Honor',
-                  recipient: 'Elena Rostova',
-                  initiative: 'Community Hub Coordination',
-                  citation: 'Coordinated logistics and audio setup for 8 community workshops throughout Chitral.',
-                  tier: 'Service Honor'
+                  award: 'Medal with Certificate',
+                  recipient: '3rd Position',
+                  initiative: 'Distinction Honor',
+                  citation: 'The 3rd position winner receives an official commemorative Medal alongside an authenticated Certificate of Merit celebrating creative problem-solving.',
+                  tier: '3rd Position · Bronze',
+                  badgeColor: 'text-orange-900 bg-orange-50 border-orange-200',
+                  iconBg: 'bg-orange-100 text-orange-700',
+                  icon: Award
                 },
                 {
                   id: 'aw-4',
-                  award: 'Outstanding Youth Builder',
-                  recipient: 'Priya Sharma',
-                  initiative: 'High School Tech Circles',
-                  citation: 'Founded student coding and design study circles across 4 secondary schools in Chitral.',
-                  tier: 'Emerging Leader'
+                  award: 'Participation Certificate',
+                  recipient: 'All Other Participants',
+                  initiative: 'Every Contributor',
+                  citation: 'Every active delegate, student innovator, and project builder receives an official verified Certificate of Participation.',
+                  tier: 'Participation Honor',
+                  badgeColor: 'text-blue-800 bg-blue-50 border-blue-200',
+                  iconBg: 'bg-blue-100 text-blue-700',
+                  icon: FileCheck2
                 }
               ].map(item => {
                 const isAwardExpanded = expandedCards[item.id] ?? false;
+                const IconComponent = item.icon;
 
                 return (
                   <div
@@ -1927,8 +2048,8 @@ export default function App() {
                   >
                     <div>
                       <div className="flex items-center justify-between mb-3">
-                        <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
-                          <Trophy size={20} />
+                        <div className={`w-10 h-10 rounded-lg ${item.iconBg} flex items-center justify-center`}>
+                          <IconComponent size={20} />
                         </div>
                         <button
                           onClick={() => toggleCard(item.id)}
@@ -1939,13 +2060,13 @@ export default function App() {
                         </button>
                       </div>
 
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 inline-block mb-2">
+                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border inline-block mb-2 ${item.badgeColor}`}>
                         {item.tier}
                       </span>
-                      <h3 className="font-heading text-base font-black text-slate-900 mb-1">
+                      <h3 className="font-heading text-lg font-black text-slate-900 mb-1">
                         {item.recipient}
                       </h3>
-                      <div className="text-xs font-bold text-slate-700 mb-2">
+                      <div className="text-xs font-bold text-blue-700 mb-2">
                         {item.award}
                       </div>
 
@@ -2018,6 +2139,15 @@ export default function App() {
                   className="hover:text-white transition-colors cursor-pointer"
                 >
                   Booni Schedule & Workshops
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#attendee-pass"
+                  onClick={(e) => handleSmoothNavClick(e, 'attendee-pass', 'badgeGenerator')}
+                  className="hover:text-white transition-colors cursor-pointer text-blue-400 font-semibold"
+                >
+                  Attendee Pass & ID Badge
                 </a>
               </li>
               <li>
@@ -2225,12 +2355,42 @@ export default function App() {
                   <div className="text-[11px] text-slate-500">18 Oct 2026 · Booni, Chitral (Venue TBA)</div>
                 </div>
 
-                <button
-                  onClick={() => setIsRegisterModalOpen(false)}
-                  className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-lg cursor-pointer"
-                >
-                  Done & Close
-                </button>
+                <div className="space-y-2 pt-1">
+                  <button
+                    onClick={() => {
+                      const newPassId = regSuccessBadge ? `CLB-PASS-${regSuccessBadge.replace('CLB-TKT-', '')}` : `CLB-PASS-2026-${Math.floor(100 + Math.random() * 900)}`;
+                      setActivePass({
+                        id: newPassId,
+                        fullName: regForm.fullName,
+                        affiliation: regForm.institution || 'Registered Attendee · Booni Mega Event',
+                        accessLevel: 'Student Pass',
+                        track: 'Track 1: AI, Software & Robotics Ideation Sprint',
+                        seatZone: 'Zone B · Confirmed Seat',
+                        avatarVariant: 1,
+                        emergencyContact: '+92 345 9876543 (Event Ops)',
+                        issueDate: '18 October 2026',
+                        verified: true
+                      });
+                      setIsRegisterModalOpen(false);
+                      setSectionsExpanded(prev => ({ ...prev, badgeGenerator: true }));
+                      setBadgeSuccessNotice(`Generated official ID badge for ${regForm.fullName}!`);
+                      setTimeout(() => {
+                        const el = document.getElementById('attendee-pass');
+                        if (el) el.scrollIntoView({ behavior: 'smooth' });
+                      }, 100);
+                    }}
+                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-blue-600/20 active:scale-95"
+                  >
+                    <IdCard size={15} /> Generate Official ID Badge & Pass Now →
+                  </button>
+
+                  <button
+                    onClick={() => setIsRegisterModalOpen(false)}
+                    className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer transition-colors"
+                  >
+                    Done & Close
+                  </button>
+                </div>
               </div>
             )}
           </div>

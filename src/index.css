@@ -58,7 +58,10 @@ html {
     box-shadow: none !important;
     border: 4px solid #1e40af !important;
     z-index: 999999;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
+
   .no-print {
     display: none !important;
   }
